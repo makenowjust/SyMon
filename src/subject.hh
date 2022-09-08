@@ -16,6 +16,7 @@ public:
   virtual void deleteObserver(std::shared_ptr<Observer<T>>) = 0;
 protected:
   virtual void notifyObservers(const T&) const = 0;
+  virtual void notifyStepObservers() const = 0;
 };
 
 /*!
@@ -37,6 +38,11 @@ protected:
   void notifyObservers(const T& data) const {
     if (observer) {
       observer->notify(data);
+    }
+  }
+  void notifyStepObservers() const {
+    if (observer) {
+      observer->notifyStep();
     }
   }
   std::shared_ptr<Observer<T>> observer;
@@ -64,6 +70,13 @@ protected:
       if (observer) {
         observer->notify(data);
       }      
+    }
+  };
+  void notifyStepObservers() const {
+    for (const auto observer: ptrs) {
+      if (observer) {
+        observer->notifyStep();
+      }
     }
   };
   std::vector<std::shared_ptr<Observer<T>>> ptrs;

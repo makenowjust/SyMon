@@ -8,6 +8,10 @@ struct BooleanPrinter : public Observer<BooleanMonitorResult> {
   void notify(const BooleanMonitorResult &result) override {
     printf("@%f. (time-point %lu)\n", result.timestamp, result.index);
   }
+
+  void notifyStep() override {
+    printf("END\n");
+  }
 };
 
 #include "data_parametric_monitor.hh"
@@ -35,6 +39,10 @@ struct DataParametricPrinter : public Observer<DataParametricMonitorResult> {
     std::cout << result.numberValuation
               << "\n";
   }
+
+  void notifyStep() override {
+    std::cout << "END\n" << std::flush;
+  }
 };
 
 #include "parametric_monitor.hh"
@@ -61,6 +69,10 @@ struct ParametricPrinter : public Observer<ParametricMonitorResult> {
 
     std::cout << "Num: " << result.numberValuation
               << "\tClock: " << result.parametricTimingValuation << "\n";
+  }
+
+  void notifyStep() override {
+    std::cout << "END\n" << std::flush;
   }
 };
 

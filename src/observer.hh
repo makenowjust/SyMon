@@ -8,4 +8,5 @@ template<typename T>
 class Observer {
 public:
   virtual void notify(const T&) = 0;
+  virtual void notifyStep() = 0;
 };

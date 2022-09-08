@@ -34,7 +34,8 @@ using ::operator<<;
 template<typename TAType, typename BoostTAType, typename Number, typename Timestamp, typename Monitor, typename Printer>
 int execute(const std::string &timedAutomatonFileName,
             const std::string &signatureFileName,
-            const std::string &timedWordFileName) {
+            const std::string &timedWordFileName,
+            const bool interactive) {
   TAType TA;
 
   // parse TA
@@ -59,7 +60,7 @@ int execute(const std::string &timedAutomatonFileName,
   const auto printer = std::make_shared<Printer>();
 
   // construct Monitor
-  const auto monitor = std::make_shared<Monitor>(TA);
+  const auto monitor = std::make_shared<Monitor>(TA, interactive);
   monitor->addObserver(printer);
 
   // construct TimedWordParser
@@ -107,6 +108,7 @@ int main(int argc, char *argv[]) {
           ("boolean,b", "non-parametric and  boolean mode")
           ("dataparametric,d", "data-parametric mode")
           ("parametric,p", "parametric mode")
+          ("interactive,n", "interactive mode")
           ("version,V", "version")
           ("input,i", value<std::string>(&timedWordFileName)->default_value("stdin"), "input file of Timed Words")
           ("automaton,f", value<std::string>(&timedAutomatonFileName)->default_value(""),
@@ -135,18 +137,19 @@ int main(int argc, char *argv[]) {
     die("only one mode can be specified!!", 1);
   }
 
+  const auto interactive = vm.count("interactive") > 0;
   if (vm.count("parametric")) {
     // parametric
     return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor, ParametricPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName);
+            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
   } else if (vm.count("dataparametric")) {
     // data parametric
     return execute<DataParametricTA, DataParametricBoostTA, Parma_Polyhedra_Library::Coefficient, double, DataParametricMonitor, DataParametricPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName);
+            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
   } else {
     // boolean
     return execute<NonParametricTA<Number>, NonParametricBoostTA<Number>, Number, double, BooleanMonitor<Number>, BooleanPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName);
+            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
   }
   return 0;
 }

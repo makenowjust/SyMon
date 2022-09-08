@@ -19,7 +19,7 @@ namespace NonSymbolic {
   class BooleanMonitor : public SingleSubject<BooleanMonitorResult>,
                          public Observer<TimedWordEvent<Number>> {
   public:
-    BooleanMonitor(const NonParametricTA<Number> &automaton) : automaton(automaton) {
+    BooleanMonitor(const NonParametricTA<Number> &automaton, const bool interactive) : automaton(automaton), interactive(interactive) {
       configurations.clear();
       // configurations.reserve(automaton.initialStates.size());
       std::vector<double> initCVal(automaton.clockVariableSize);
@@ -81,9 +81,16 @@ namespace NonSymbolic {
       absTime = timestamp;
       index++;
       configurations = std::move(nextConfigurations);
+      notifyStep();
+    }
+    void notifyStep() override {
+      if (interactive) {
+        notifyStepObservers();
+      }
     }
   private:
     const NonParametricTA<Number> automaton;
+    const bool interactive;
     using Configuration = std::tuple<std::shared_ptr<NonParametricTAState<Number>>,
                                      std::vector<double>,
                                      StringValuation,

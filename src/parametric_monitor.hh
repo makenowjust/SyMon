@@ -29,7 +29,7 @@ class ParametricMonitor : public SingleSubject<ParametricMonitorResult>,
 public:
   static const constexpr std::size_t unobservableActinoID = 127;
 
-  explicit ParametricMonitor(const ParametricTA &automaton) : automaton(automaton) {
+  explicit ParametricMonitor(const ParametricTA &automaton, const bool interactive) : automaton(automaton), interactive(interactive) {
     absTime = 0;
     configurations.clear();
     // 1 -- |P|: Parameters, |P| + 1 -- |P| + |C|: Clocks
@@ -262,10 +262,18 @@ public:
                                               numberEnv.pointset()));
       }
     }
+    notifyStep();
+  }
+
+  void notifyStep() override {
+    if (interactive) {
+      notifyStepObservers();
+    }
   }
 
 private:
   const ParametricTA automaton;
+  const bool interactive;
   using Configuration = std::tuple<std::shared_ptr<PTAState>,
           ParametricTimingValuation,
           Symbolic::StringValuation,

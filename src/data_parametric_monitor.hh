@@ -27,7 +27,7 @@ struct DataParametricMonitorResult {
 class DataParametricMonitor : public SingleSubject<DataParametricMonitorResult>,
                               public Observer<TimedWordEvent<Parma_Polyhedra_Library::Coefficient>> {
 public:
-  explicit DataParametricMonitor(const DataParametricTA &automaton) : automaton(automaton) {
+  explicit DataParametricMonitor(const DataParametricTA &automaton, const bool interactive) : automaton(automaton), interactive(interactive) {
     absTime = 0;
     configurations.clear();
     // configurations.reserve(automaton.initialStates.size());
@@ -97,10 +97,17 @@ public:
     absTime = timestamp;
     index++;
     configurations = std::move(nextConfigurations);
+    notifyStep();
   }
 
+  void notifyStep() override {
+    if (interactive) {
+      notifyStepObservers();
+    }
+  }
 private:
   const DataParametricTA automaton;
+  const bool interactive;
   using Configuration = std::tuple<std::shared_ptr<DataParametricTAState>,
           std::vector<double>,
           Symbolic::StringValuation,
