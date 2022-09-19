@@ -28,7 +28,7 @@ using ::operator<<;
  * @brief Execute the monitoring procedure
  *
  * @param [in] timedAutomatonFileName filename of the timed automaton
- * @param [in] signatureFileName filename of the sugnature
+ * @param [in] signatureFileName filename of the signature
  * @param [in] timedWordFileName filename of the timed word. When it is "stdin", the monitor reads from standard input.
  */
 template<typename TAType, typename BoostTAType, typename Number, typename Timestamp, typename Monitor, typename Printer>
@@ -88,10 +88,10 @@ int execute(const std::string &timedAutomatonFileName,
 
 int main(int argc, char *argv[]) {
   using Number = double;
-  const auto programName = "dataMonitor";
+  const auto programName = "SyMon";
   std::cin.tie(0);
   std::ios::sync_with_stdio(false);
-  const auto errorHeader = "dataMonitor: ";
+  const auto errorHeader = "SyMon: ";
 
   const auto die = [&errorHeader](const char *message, int status) {
     std::cerr << errorHeader << message << std::endl;
@@ -113,7 +113,9 @@ int main(int argc, char *argv[]) {
           ("input,i", value<std::string>(&timedWordFileName)->default_value("stdin"), "input file of Timed Words")
           ("automaton,f", value<std::string>(&timedAutomatonFileName)->default_value(""),
            "input file of Timed Automaton")
-          ("signature,s", value<std::string>(&signatureFileName)->default_value(""), "input file of signature");
+          ("signature,s", value<std::string>(&signatureFileName)->default_value(""), "input file of signature")
+          ("enable-string-merging", "Enable merging of string valuations")
+          ;
 
   command_line_parser parser(argc, argv);
   parser.options(visible);
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (vm.count("version")) {
-    std::cout << "dataMonitor 0.0.2\n"
+    std::cout << programName << " 0.0.2\n"
               << visible << std::endl;
     return 0;
   }
@@ -140,8 +142,13 @@ int main(int argc, char *argv[]) {
   const auto interactive = vm.count("interactive") > 0;
   if (vm.count("parametric")) {
     // parametric
-    return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor, ParametricPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+    if (vm.count("enable-string-merging")) {
+      return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true>, ParametricPrinter>(
+              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+    } else {
+      return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false>, ParametricPrinter>(
+              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+    }
   } else if (vm.count("dataparametric")) {
     // data parametric
     return execute<DataParametricTA, DataParametricBoostTA, Parma_Polyhedra_Library::Coefficient, double, DataParametricMonitor, DataParametricPrinter>(

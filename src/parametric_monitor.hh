@@ -20,14 +20,16 @@ struct ParametricMonitorResult {
 };
 
 /*!
+ * @tparam UseStringMerge Flag to enable string merge.
  * @note The Automaton can have unobservable transitions, but we assume that there is no loop of unobservable transitions.
  * @note The label of the unobservable events is 127 (This will be modified in a future version).
- * @note If the last trantision is an unobservable transition, the timestamp is that of the latest event.
+ * @note If the last transition is an unobservable transition, the timestamp is that of the latest event.
  */
+template<bool UseStringMerge>
 class ParametricMonitor : public SingleSubject<ParametricMonitorResult>,
                           public Observer<TimedWordEvent<Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient>> {
 public:
-  static const constexpr std::size_t unobservableActinoID = 127;
+  static const constexpr std::size_t unobservableActionID = 127;
 
   explicit ParametricMonitor(const ParametricTA &automaton, const bool interactive) : automaton(automaton), interactive(interactive) {
     absTime = 0;
@@ -71,7 +73,7 @@ public:
     while (!currentConfigurations.empty()) {
       nextConfigurations.clear();
       for (const Configuration &conf: currentConfigurations) {
-        auto transitionIt = std::get<0>(conf)->next.find(unobservableActinoID);
+        auto transitionIt = std::get<0>(conf)->next.find(unobservableActionID);
         if (transitionIt == std::get<0>(conf)->next.end()) {
           continue;
         }
@@ -142,7 +144,7 @@ public:
     while (!currentConfigurations.empty()) {
       nextConfigurations.clear();
       for (const Configuration &conf: currentConfigurations) {
-        auto transitionIt = std::get<0>(conf)->next.find(unobservableActinoID);
+        auto transitionIt = std::get<0>(conf)->next.find(unobservableActionID);
         if (transitionIt == std::get<0>(conf)->next.end()) {
           continue;
         }
@@ -251,15 +253,43 @@ public:
     }
     absTime = timestamp;
     index++;
+    boost::unordered_map<std::tuple<std::shared_ptr<PTAState>,
+            ParametricTimingValuation,
+            Symbolic::NumberValuation>,
+            std::vector<Symbolic::StringValuation>> stringMergedConfigurations;
     //merge numberEnv
     configurations.clear();
     for (auto &conf: mergedConfigurations) {
       conf.second.pairwise_reduce();
       for (auto numberEnv: conf.second) {
-        configurations.insert(std::make_tuple(std::get<0>(conf.first),
-                                              std::get<1>(conf.first),
-                                              std::get<2>(conf.first),
-                                              numberEnv.pointset()));
+        if constexpr (UseStringMerge) {
+          const auto key = std::make_tuple(std::get<0>(conf.first), std::get<1>(conf.first), numberEnv.pointset());
+          auto it = stringMergedConfigurations.find(key);
+          if (it == stringMergedConfigurations.end()) {
+            stringMergedConfigurations[key] = {std::get<2>(conf.first)};
+          } else {
+            it->second.push_back(std::get<2>(conf.first));
+          }
+        } else {
+          configurations.insert(std::make_tuple(std::get<0>(conf.first),
+                                                std::get<1>(conf.first),
+                                                std::get<2>(conf.first),
+                                                numberEnv.pointset()));
+        }
+      }
+    }
+
+    if constexpr (UseStringMerge) {
+      //merge stringEnv
+      configurations.clear();
+      for (auto &conf: stringMergedConfigurations) {
+        Symbolic::pairwise_reduce(conf.second);
+        for (const auto &stringEnv: conf.second) {
+          configurations.insert(std::make_tuple(std::get<0>(conf.first),
+                                                std::get<1>(conf.first),
+                                                stringEnv,
+                                                std::get<2>(conf.first)));
+        }
       }
     }
     notifyStep();
