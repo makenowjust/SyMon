@@ -35,7 +35,8 @@ template<typename TAType, typename BoostTAType, typename Number, typename Timest
 int execute(const std::string &timedAutomatonFileName,
             const std::string &signatureFileName,
             const std::string &timedWordFileName,
-            const bool interactive) {
+            bool interactive,
+            bool useDataDependentGuards) {
   TAType TA;
 
   // parse TA
@@ -46,7 +47,6 @@ int execute(const std::string &timedAutomatonFileName,
   }
   BoostTAType BoostTA;
   parseBoostTA(taStream, BoostTA);
-  convBoostTA(BoostTA, TA);
 
   // read signature file
   std::fstream signatureStream(signatureFileName);
@@ -55,6 +55,7 @@ int execute(const std::string &timedAutomatonFileName,
     return 1;
   }
   Signature signature(signatureStream);
+  convBoostTA(BoostTA, signature, TA, useDataDependentGuards);
 
   // construct BooleanPrinter
   const auto printer = std::make_shared<Printer>();
@@ -141,33 +142,34 @@ int main(int argc, char *argv[]) {
   }
 
   const auto interactive = vm.count("interactive") > 0;
+  const auto useDataDependentGuards = vm.count("enable-data-dependent-guards") > 0;
   if (vm.count("parametric")) {
     // parametric
     if (vm.count("enable-string-merging")) {
       if (vm.count("enable-data-dependent-guards")) {
         return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true, true>, ParametricPrinter>(
-              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
       } else {
         return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true, false>, ParametricPrinter>(
-              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
       }
     } else {
       if (vm.count("enable-data-dependent-guards")) {
         return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false, true>, ParametricPrinter>(
-                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
       } else {
         return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false, false>, ParametricPrinter>(
-                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
       }
     }
   } else if (vm.count("dataparametric")) {
     // data parametric
     return execute<DataParametricTA, DataParametricBoostTA, Parma_Polyhedra_Library::Coefficient, double, DataParametricMonitor, DataParametricPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
   } else {
     // boolean
     return execute<NonParametricTA<Number>, NonParametricBoostTA<Number>, Number, double, BooleanMonitor<Number>, BooleanPrinter>(
-            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+            timedAutomatonFileName, signatureFileName, timedWordFileName, interactive, useDataDependentGuards);
   }
   return 0;
 }

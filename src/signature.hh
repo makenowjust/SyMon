@@ -25,6 +25,7 @@ public:
       }
       stringSizeMap[key] = stringSize;
       numberSizeMap[key] = numberSize;
+      idReverseMap[id] = key;
       idMap[key] = id++;
     }
   }
@@ -37,8 +38,16 @@ public:
   std::size_t getId(const std::string &key) const {
     return idMap.at(key);
   }
+  std::size_t getNumberSizeById(std::size_t id) const {
+    auto it = idReverseMap.find(id);
+    if (it == idReverseMap.end()) {
+      return 0;
+    }
+    return numberSizeMap.at(it->second);
+  }
 private:
   std::unordered_map<std::string, std::size_t> idMap;
+  std::unordered_map<std::size_t, std::string> idReverseMap;
   std::unordered_map<std::string, std::size_t> stringSizeMap;
   std::unordered_map<std::string, std::size_t> numberSizeMap;
 };

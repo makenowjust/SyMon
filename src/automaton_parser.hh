@@ -1,5 +1,7 @@
 #pragma once
 
+#include "signature.hh"
+
 #include "non_symbolic_number_constraint.hh"
 #include "non_symbolic_string_constraint.hh"
 
@@ -427,7 +429,9 @@ void parseBoostTA(std::istream &file, BoostPTA &BoostTA) {
 template<typename StringConstraint, typename NumberConstraint, typename TimingConstraint, typename Update>
 static inline
 void convBoostTA(const BoostTimedAutomaton<StringConstraint, NumberConstraint, TimingConstraint, Update> &BoostTA,
-                 TimedAutomaton<StringConstraint, NumberConstraint, std::vector<TimingConstraint>, Update> &TA) {
+                 const Signature &signature,
+                 TimedAutomaton<StringConstraint, NumberConstraint, std::vector<TimingConstraint>, Update> &TA,
+                 bool useDataDependentGuards) {
   TA.clockVariableSize = boost::get_property(BoostTA, boost::graph_clock_variable_size);
   TA.stringVariableSize = boost::get_property(BoostTA, boost::graph_string_variable_size);
   TA.numberVariableSize = boost::get_property(BoostTA, boost::graph_number_variable_size);
@@ -476,7 +480,7 @@ void convBoostTA(const BoostTimedAutomaton<StringConstraint, NumberConstraint, T
 }
 
 static inline
-void convBoostTA(const BoostPTA &BoostTA, ParametricTA &TA) {
+void convBoostTA(const BoostPTA &BoostTA, const Signature &signature, ParametricTA &TA, bool useDataDependentGuards) {
   using namespace Symbolic;
   TA.clockVariableSize = boost::get_property(BoostTA, boost::graph_clock_variable_size);
   TA.stringVariableSize = boost::get_property(BoostTA, boost::graph_string_variable_size);
@@ -502,7 +506,15 @@ void convBoostTA(const BoostPTA &BoostTA, ParametricTA &TA) {
     for (auto firstEdge = edge_range.first, lastEdge = edge_range.second; firstEdge != lastEdge; ++firstEdge) {
       AutomatonTransition<StringConstraint, NumberConstraint, ParametricTimingConstraint, Update> transition;
       transition.target = stateConvMap[boost::target(*firstEdge, BoostTA)];//.get();
-      transition.guard = Parma_Polyhedra_Library::NNC_Polyhedron(TA.parameterSize + TA.clockVariableSize);
+      if (useDataDependentGuards) {
+        auto id = boost::get(
+                &BoostTATransition<StringConstraint, NumberConstraint, ParametricTimingConstraintHelper, Update>::c,
+                BoostTA, *firstEdge);
+        auto numberSize = signature.getNumberSizeById(id);
+        transition.guard = Parma_Polyhedra_Library::NNC_Polyhedron(TA.parameterSize + TA.clockVariableSize + numberSize);
+      } else {
+        transition.guard = Parma_Polyhedra_Library::NNC_Polyhedron(TA.parameterSize + TA.clockVariableSize);
+      }
       const auto boostGuard = boost::get(
               &BoostTATransition<StringConstraint, NumberConstraint, ParametricTimingConstraintHelper, Update>::guard,
               BoostTA,
