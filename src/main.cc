@@ -114,7 +114,8 @@ int main(int argc, char *argv[]) {
           ("automaton,f", value<std::string>(&timedAutomatonFileName)->default_value(""),
            "input file of Timed Automaton")
           ("signature,s", value<std::string>(&signatureFileName)->default_value(""), "input file of signature")
-          ("enable-string-merging", "Enable merging of string valuations")
+          ("enable-string-merging", "enable merging of string valuations")
+          ("enable-data-dependent-guards", "enable data dependent guards")
           ;
 
   command_line_parser parser(argc, argv);
@@ -143,11 +144,21 @@ int main(int argc, char *argv[]) {
   if (vm.count("parametric")) {
     // parametric
     if (vm.count("enable-string-merging")) {
-      return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true>, ParametricPrinter>(
+      if (vm.count("enable-data-dependent-guards")) {
+        return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true, true>, ParametricPrinter>(
               timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+      } else {
+        return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<true, false>, ParametricPrinter>(
+              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+      }
     } else {
-      return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false>, ParametricPrinter>(
-              timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+      if (vm.count("enable-data-dependent-guards")) {
+        return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false, true>, ParametricPrinter>(
+                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+      } else {
+        return execute<ParametricTA, BoostPTA, Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient, ParametricMonitor<false, false>, ParametricPrinter>(
+                timedAutomatonFileName, signatureFileName, timedWordFileName, interactive);
+      }
     }
   } else if (vm.count("dataparametric")) {
     // data parametric

@@ -32,7 +32,7 @@ namespace NonSymbolic {
       }
     }
     virtual ~BooleanMonitor() = default;
-    void notify(const TimedWordEvent<Number>& event) {
+    void notify(const TimedWordEvent<Number>& event) override {
       const Action actionId = event.actionId;
       const std::vector<std::string> &strings = event.strings;
       const std::vector<Number> &numbers = event.numbers;

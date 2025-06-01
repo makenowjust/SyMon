@@ -25,7 +25,7 @@ struct ParametricMonitorResult {
  * @note The label of the unobservable events is 127 (This will be modified in a future version).
  * @note If the last transition is an unobservable transition, the timestamp is that of the latest event.
  */
-template<bool UseStringMerge>
+template<bool UseStringMerge, bool UseDataDependentGuards>
 class ParametricMonitor : public SingleSubject<ParametricMonitorResult>,
                           public Observer<TimedWordEvent<Parma_Polyhedra_Library::Coefficient, Parma_Polyhedra_Library::Coefficient>> {
 public:
@@ -214,6 +214,12 @@ public:
       // make the current env
       // The time elapsed in the above
       auto clockValuation = std::get<1>(conf); //.clockValuation;
+      if constexpr (UseDataDependentGuards) { 
+        clockValuation.add_space_dimensions_and_embed(numbers.size());
+        for (std::size_t i = 0; i < numbers.size(); i++) {
+          clockValuation.add_constraint(Parma_Polyhedra_Library::Variable(automaton.parameterSize + automaton.clockVariableSize + i) == numbers[i]);
+        }
+      }
       auto stringEnv = std::get<2>(conf); //.stringEnv;
       stringEnv.insert(stringEnv.end(), strings.begin(), strings.end());
       auto numberEnv = std::get<3>(conf); //.numberEnv;
@@ -231,6 +237,9 @@ public:
         if (eval(nextCVal, transition.guard) &&
             eval(transition.stringConstraints, nextSEnv,
                  transition.numConstraints, nextNEnv)) {
+          if constexpr (UseDataDependentGuards) {
+            nextCVal.remove_higher_space_dimensions(automaton.parameterSize + automaton.clockVariableSize);
+          }
           for (const VariableID resetVar: transition.resetVars) {
             nextCVal.affine_image(Parma_Polyhedra_Library::Variable(automaton.parameterSize + resetVar),
                                   Parma_Polyhedra_Library::Linear_Expression(0));
