@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
            "input file of Timed Automaton")
           ("signature,s", value<std::string>(&signatureFileName)->default_value(""), "input file of signature")
           ("enable-string-merging", "enable merging of string valuations")
-          ("enable-data-dependent-guards", "enable data dependent guards")
+          ("enable-data-dependent-guards", "enable data-dependent guards")
           ;
 
   command_line_parser parser(argc, argv);

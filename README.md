@@ -22,10 +22,12 @@ Usage
 **-i** *file*, **--input** *file* Read a timed word from *file*. <br />
 **-f** *file*, **--automaton** *file* Read a timed automaton from *file*. <br />
 **-s** *file*, **-signature** *pattern* Read a signature from *file*. <br />
+**-n**, **--interactive** Run in interactive mode. <br />
 **-b**, **-boolean** non-parametric and Boolean mode (default). <br />
 **-d**, **-dataparametric** data-parametric mode. <br />
 **-p**, **-parametric** fully parametric mode. <br />
-**--enable-string-merging** Enable merging of symbolic string valuations. This is supported only in the fully parametric mode. <br />
+**--enable-string-merging** enable merging of symbolic string valuations. This is supported only in the fully parametric mode. <br />
+**--enable-data-dependent-guards** enable data-dependent guards. This is supported only in the fully parametric mode. <br />
 
 Example
 -------
